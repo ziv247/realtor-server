@@ -4,32 +4,24 @@ const DB = require('../modal/sql-connection');
 const crypto = require('crypto');
 
 
-router.post('/', function (req, res) {
+router.post('/', async (req, res) => {
     const userDetails = req.body;
     userDetails.password = crypto.pbkdf2Sync(req.body.password, 'realtorrocks', 100000, 64, 'sha512').toString('base64');
-    DB.insertUser(userDetails).then(results => {
-        res.send(results)
-        console.log(results)
-    });
-    // const { first_name, last_name, email, password, phone } = req.body;
-    // const query = 
-    // `INSERT INTO users
-    // (\`id\`, \`role_id\`, \`first_name\`, \`last_name\`, \`email\`, \`password\`, \`phone\`)
-    // VALUES
-    // (DEFAULT, 1, '${first_name}', '${last_name}', '${email}', '${password}', '${phone}')`
-    // DB.checkUser(email, password).then((results) => {
-    //     results.length == 1
-    //         ?
-    //         (res.cookie("user", results[0]),
-    //             res.send(req.cookies))
-    //         :
-    //         res.status(401).json({ status: 401, msg: "Not today" });
-
-
-
-    // });
-
+    let results, user;
+    try {
+        results = await DB.insertUser(userDetails);
+        user = await DB.checkUser(userDetails.email, userDetails.password);
+        user = { ...user[0] };
+        console.log(user)
+        if (user) {
+            res.cookie("user", JSON.stringify(user), { maxAge: 1000 * 60 * 60 * 24 }).status(200).send(user);
+        } else {
+            res.status(401).json({ status: 401, msg: "Not today" });
+        }
+    } catch (error) {
+        res.status(409).json({ status: 409, msg: error });
+        console.log("Failed: ", error);
+    }
 });
-
 
 module.exports = router;

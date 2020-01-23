@@ -42,13 +42,13 @@ class apartmentBuilder {
         this.page = page;
         this.size = size;
         this.params = [];
-        this.query = `Select a.*,c.\`name\` AS "city_name" FROM apartments a JOIN cities c ON a.city_id = c.id WHERE 1`;
+        this.query = `Select a.*,c.\`name\` AS "city_name" FROM apartments a JOIN cities c ON a.city_id = c.id JOIN countries cn WHERE 1`;
     }
 
     byCountry(country) {
         country
             &&
-            (this.query += ' AND cn.name = ? ', this.params.push(country))
+            (this.query += ' AND cn.id = ? ', this.params.push(country))
 
         return this
     }
@@ -56,36 +56,48 @@ class apartmentBuilder {
     byCity(city) {
         city
             &&
-            (this.query += ' AND c.name = ? ', this.params.push(city))
+            (this.query += ' AND c.id = ? ', this.params.push(city))
         return this
     }
 
     minPrice(price) {
-        console.log(country);
-        price
+        price > 0
             &&
             (this.query += ' AND a.price >= ? ', this.params.push(price))
         return this
     }
 
     maxPrice(price) {
-        price
+        price > 0
             &&
             (this.query += ' AND a.price <= ? ', this.params.push(price))
         return this
     }
 
-    numOfRooms(numRooms) {
+    minNumRooms(numRooms) {
         numRooms
             &&
-            (this.query += ' AND a.number_of_room = ? ', this.params.push(numRooms))
+            (this.query += ' AND a.number_of_room >= ? ', this.params.push(numRooms))
+        return this
+    }
+    maxNumRooms(numRooms) {
+        numRooms
+            &&
+            (this.query += ' AND a.number_of_room <= ? ', this.params.push(numRooms))
         return this
     }
 
-    numOfBath(numBath) {
+    minNumBaths(numBath) {
         numBath
             &&
-            (this.query += ' AND a.number_of_bath = ? ', this.params.push(numBath))
+            (this.query += ' AND a.number_of_bath >= ? ', this.params.push(numBath))
+        return this
+    }
+
+    maxNumBaths(numBath) {
+        numBath
+            &&
+            (this.query += ' AND a.number_of_bath <= ? ', this.params.push(numBath))
         return this
     }
 

@@ -18,21 +18,50 @@ getApartment = (apartmentID) => {
     return promise;
 }
 
-insertUser = ({ first_name, last_name, email, password, phone }) => {
+const insertUser = ({ first_name, last_name, username, email, password }) => {
 
     const query =
-        `INSERT INTO users
-    (\`id\`, \`role_id\`, \`first_name\`, \`last_name\`, \`email\`, \`password\`, \`phone\`)
-    VALUES
-    (DEFAULT, 1, '${first_name}', '${last_name}', '${email}', '${password}', '${phone}')`
+        'INSERT INTO users (role_id, first_name, last_name, username, email, password) VALUES (1, ?, ?, ?, ?, ?)';
 
     const promise = new Promise((resolve, reject) => {
-        connection.query(query, function (error, results, fields) {
-            if (error) reject(error);
+        connection.query(query, [first_name, last_name, username, email, password], function (error, results, fields) {
+            if (error) {
+
+                reject(error);
+            }
             resolve(results);
         });
     });
     return promise;
+}
+
+const insertApartment = ({ user_id, address, city_id, price, number_of_room, number_of_bath, sqft, description, sale_status, availability, property_type, main_image, status }) => {
+    console.log(user_id, address, city_id, price, number_of_room, number_of_bath, sqft, description, sale_status, availability, property_type, main_image, status)
+    const query =
+        'INSERT INTO apartments (user_id,address,city_id,price,number_of_room,number_of_bath,sqft,description,sale_status,availability,property_type,main_image,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)';
+
+    const promise = new Promise((resolve, reject) => {
+        connection.query(query, [user_id, address, city_id, price, number_of_room, number_of_bath, sqft, description, sale_status, availability, property_type, main_image, status], function (error, results, fields) {
+            if (error) {
+
+                reject(error);
+            }
+            resolve(results.insertId);
+        });
+    });
+    return promise;
+}
+
+function addImagesToApartment(apartment_id, images) {
+    return new Promise((resolve, reject) => {
+        let data = '';
+        images.map(image => data += (`(${apartment_id},${" ' " + image.filename + " ' "}),`));
+        data = data.slice(0, data.length - 1);
+        connection.query(`insert into images (apartment_id,url) VALUES ${data}`, (error, results, fields) => {
+            if (error) reject(error);
+            resolve(results);
+        })
+    })
 }
 //This version is using what we've done last week:
 
@@ -42,7 +71,7 @@ function checkUser(email, password) {
 
     return new Promise((resolve, reject) => {
 
-        connection.query(`SELECT * FROM users where \`email\`="${email}" AND \`password\` = "${password}"`, (error, results, fields) => {
+        connection.query('SELECT * FROM users where `email` = ? AND `password` = ? ', [email, password], (error, results, fields) => {
             if (error) {
                 reject(error);
                 return;
@@ -50,19 +79,31 @@ function checkUser(email, password) {
             resolve(results);
         });
     });
-
-
 }
 
-function getAllApartments({ country, city, minPrice, maxPrice, numRooms, numBath, status, type, page = 1, size = 10 }) {
+function getCountries() {
+    return new Promise((resolve, reject) => {
+        connection.query("SELECT * FROM countries", (error, results, fields) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(results);
+        })
+    })
+}
+
+function getAllApartments({ country, city, minPrice, maxPrice, minNumRooms, maxNumRooms, minNumBaths, maxNumBaths, status, type, page = 1, size = 10 }) {
     return new Promise((resolve, reject) => {
         const { query, params } = Builder.allApartment(page, size)
             .byCountry(country)
             .byCity(city)
-            .maxPrice(minPrice)
+            .minPrice(minPrice)
             .maxPrice(maxPrice)
-            .numOfRooms(numRooms)
-            .numOfBath(numBath)
+            .minNumRooms(minNumRooms)
+            .maxNumRooms(maxNumRooms)
+            .minNumBaths(minNumBaths)
+            .maxNumBaths(maxNumBaths)
             .saleStatus(status)
             .propertyType(type)
             .build();
@@ -90,6 +131,20 @@ function getApartmentsById(apartmentId) {
     });
 }
 
-module.exports = { getApartment, checkUser, insertUser, getAllApartments, getApartmentsById }
+function getCityByCountryId(countryId) {
+    return new Promise((resolve, reject) => {
+        const query = "SELECT * FROM realtor.cities where country_id = ?"
+        connection.query(query, countryId, (error, results, fields) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(results);
+        });
+    });
+}
+
+
+module.exports = { getApartment, checkUser, insertUser, getAllApartments, getApartmentsById, getCountries, getCityByCountryId, insertApartment, addImagesToApartment }
 
 
