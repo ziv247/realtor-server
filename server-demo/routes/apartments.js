@@ -5,7 +5,7 @@ const multer = require('multer');
 
 
 const storage = multer.diskStorage({
-  destination: 'images/apartment/',
+  destination: 'public/images/apartment/',
   filename: function (req, file, cbFunc) {
     cbFunc(null, file.originalname)
   }
@@ -26,33 +26,28 @@ router.get('/:apartmentId/', async function (req, res, next) {
   res.send(results);
 });
 
-router.post('/', upload.single('main_image'), async (req, res) => {
+router.post('/', upload.array('images'), async (req, res) => {
   try {
     console.log("Body: ", req.body);
-    console.log("File: ", req.file);
+    console.log("Files: ", req.files);
     const apartmentDetails = req.body;
-    const main_image = req.file.destination + req.file.originalname;
+    const main_image = "images/apartment/" + req.files[0].originalname;
     console.log(main_image);
     apartmentDetails.main_image = main_image;
-    // const images = req.files.slice(1);
+    const images = req.files.slice(1);
 
     const apartmentId = await DB.insertApartment(apartmentDetails);
-    // const addImages = await DB.addImagesToApartment(apartmentId, images);
+    const addImages = await DB.addImagesToApartment(apartmentId, images);
     res.status(201).json({ apartmentId })
   } catch (error) {
     throw new Error(`Posting new apartment failed with ${error.message}`)
   }
 });
 
-// router.put('/:apartmentsId', function (req, res) {
-//   customerId, city, country, page = 1, size = 10
-// });
-
-// router.delete('/:apartmentsId', function (req, res) {
-//   // orders.splice(orders.findIndex(order => order.id == req.params.orderId), 1);
-//   // res.send(orders);
-// });
-
+router.delete('/image/:image_id/', async function (req, res, next) {
+  const results = await DB.deleteImage(req.params.image_id);
+  res.send(results);
+});
 
 
 module.exports = router;

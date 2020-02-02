@@ -7,8 +7,9 @@ const DB = require('../modal/sql-connection');
 router.get('/', function (req, res, next) {
   DB.getAll("users").then((results) => res.send(results));
 });
-router.get('/:userId', function (req, res, next) {
-  res.send(users.find(user => user.id == req.params.userId));
+router.get('/:userId/apartments', async function (req, res, next) {
+  const results = await DB.getApartmentsByUserId(req.params.userId);
+  res.send(results);
 });
 // router.get('/:userId/orders', function (req, res) {
 //   const user = users.find(user => user.id == req.params.userId);

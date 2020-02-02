@@ -42,7 +42,7 @@ class apartmentBuilder {
         this.page = page;
         this.size = size;
         this.params = [];
-        this.query = `Select a.*,c.\`name\` AS "city_name" FROM apartments a JOIN cities c ON a.city_id = c.id JOIN countries cn WHERE 1`;
+        this.query = 'Select a.*,c.`name` AS "city_name" ,cn.`name` AS country_name FROM apartments a JOIN cities c ON a.city_id = c.id JOIN countries cn On c.country_id = cn.id WHERE 1 ';
     }
 
     byCountry(country) {
@@ -116,7 +116,7 @@ class apartmentBuilder {
     }
 
     build() {
-        this.query += ` limit ${(this.page - 1) * this.size}, ${this.size}`;
+        this.query += ` order by created_on desc limit ${(this.page - 1) * this.size}, ${this.size} `;
         return { query: this.query, params: this.params };
     }
 }

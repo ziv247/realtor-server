@@ -18,6 +18,16 @@ getApartment = (apartmentID) => {
     return promise;
 }
 
+getApartmentsByUserId = (userId) => {
+    const promise = new Promise((resolve, reject) => {
+        connection.query(`SELECT * from apartments where user_id = ? order by created_on desc`, userId, function (error, results, fields) {
+            if (error) reject(error);
+            resolve(results);
+        });
+    });
+    return promise;
+}
+
 const insertUser = ({ first_name, last_name, username, email, password }) => {
 
     const query =
@@ -35,10 +45,9 @@ const insertUser = ({ first_name, last_name, username, email, password }) => {
     return promise;
 }
 
-const insertApartment = ({ user_id, address, city_id, price, number_of_room, number_of_bath, sqft, description, sale_status, availability, property_type, main_image, status }) => {
-    console.log(user_id, address, city_id, price, number_of_room, number_of_bath, sqft, description, sale_status, availability, property_type, main_image, status)
+const insertApartment = ({ user_id, address, city_id, price, number_of_room, number_of_bath, sqft, description, sale_status, availability = "available", property_type, main_image, status = "pending" }) => {
     const query =
-        'INSERT INTO apartments (user_id,address,city_id,price,number_of_room,number_of_bath,sqft,description,sale_status,availability,property_type,main_image,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)';
+        'INSERT INTO apartments (user_id,address,city_id,price,number_of_room,number_of_bath,sqft,description,sale_status,availability,property_type,main_image,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ';
 
     const promise = new Promise((resolve, reject) => {
         connection.query(query, [user_id, address, city_id, price, number_of_room, number_of_bath, sqft, description, sale_status, availability, property_type, main_image, status], function (error, results, fields) {
@@ -55,18 +64,17 @@ const insertApartment = ({ user_id, address, city_id, price, number_of_room, num
 function addImagesToApartment(apartment_id, images) {
     return new Promise((resolve, reject) => {
         let data = '';
-        images.map(image => data += (`(${apartment_id},${" ' " + image.filename + " ' "}),`));
+        images.map(image => data += (`(${apartment_id},${" 'images/apartment/" + image.filename + "' "}),`));
         data = data.slice(0, data.length - 1);
+        console.log(data);
+
         connection.query(`insert into images (apartment_id,url) VALUES ${data}`, (error, results, fields) => {
             if (error) reject(error);
             resolve(results);
         })
     })
 }
-//This version is using what we've done last week:
 
-//Using Builder
-//Complete the code
 function checkUser(email, password) {
 
     return new Promise((resolve, reject) => {
@@ -92,6 +100,19 @@ function getCountries() {
         })
     })
 }
+function deleteImage(image_id) {
+    return new Promise((resolve, reject) => {
+        connection.query("DELETE FROM images WHERE id = ?", image_id, (error, results, fields) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve(results);
+        })
+    })
+}
+
+
 
 function getAllApartments({ country, city, minPrice, maxPrice, minNumRooms, maxNumRooms, minNumBaths, maxNumBaths, status, type, page = 1, size = 10 }) {
     return new Promise((resolve, reject) => {
@@ -120,7 +141,7 @@ function getAllApartments({ country, city, minPrice, maxPrice, minNumRooms, maxN
 
 function getApartmentsById(apartmentId) {
     return new Promise((resolve, reject) => {
-        const query = "SELECT a.*,group_concat(url) AS 'images',c.`name` AS 'city_name' FROM apartments a LEFT JOIN images i on(a.id = i.apartment_id) LEFT JOIN cities c on(a.city_id = c.id) where a.id=?"
+        const query = "SELECT a.*,group_concat(i.id,' ',url) AS 'images',c.`name` AS 'city_name' FROM apartments a LEFT JOIN images i on(a.id = i.apartment_id) LEFT JOIN cities c on(a.city_id = c.id) where a.id=?"
         connection.query(query, apartmentId, (error, results, fields) => {
             if (error) {
                 reject(error);
@@ -145,6 +166,6 @@ function getCityByCountryId(countryId) {
 }
 
 
-module.exports = { getApartment, checkUser, insertUser, getAllApartments, getApartmentsById, getCountries, getCityByCountryId, insertApartment, addImagesToApartment }
+module.exports = { getApartment, checkUser, insertUser, getAllApartments, getApartmentsById, getCountries, getCityByCountryId, insertApartment, addImagesToApartment, getApartmentsByUserId, deleteImage }
 
 
